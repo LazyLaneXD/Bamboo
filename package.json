@@ -1,0 +1,12 @@
+{
+  "name": "bamboo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A calmer way to search the web.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
