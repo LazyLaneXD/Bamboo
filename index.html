@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8faf5">
+  <meta name="description" content="Bamboo is a calmer way to explore the web.">
+  <title>Bamboo — a little more wonder</title>
+  <link rel="icon" href="/panda.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Bamboo home">
+      <img src="/panda.svg" alt="" width="42" height="42">
+      <span>bamboo<span class="brand-dot">.</span></span>
+    </a>
+    <span class="top-note"><span class="status-dot"></span> A little more wonder, every day</span>
+  </header>
+
+  <main>
+    <section class="search-section" id="search-section">
+      <div class="hero-copy">
+        <div class="eyebrow"><span>✦</span> YOUR LITTLE CORNER OF THE INTERNET</div>
+        <h1>Curiosity looks<br><em>good on you.</em></h1>
+        <p>Big questions, little discoveries, and everything in between.<br class="desktop-break"> Find your next favorite thing with Bamboo.</p>
+      </div>
+      <form class="search-form" id="search-form" role="search">
+        <label class="sr-only" for="query">Search the web</label>
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input id="query" name="q" type="search" maxlength="200" placeholder="Ask away, explore anything..." autocomplete="off" required>
+        <button type="submit">Search <span aria-hidden="true">↗</span></button>
+      </form>
+      <div class="suggestions" id="suggestions">
+        <span>NEED A LITTLE INSPIRATION?</span>
+        <button type="button" data-query="Why do pandas eat bamboo?">🐼 &nbsp;Panda facts</button>
+        <button type="button" data-query="Beautiful places to visit in nature">🌿 &nbsp;Hidden places</button>
+        <button type="button" data-query="Easy recipes to try at home">☕ &nbsp;Something new to make</button>
+      </div>
+    </section>
+
+    <section class="results-section" id="results-section" hidden>
+      <div class="results-heading">
+        <div>
+          <div class="eyebrow"><span>✦</span> A LITTLE SOMETHING WE FOUND</div>
+          <h2>Explore the <em>web.</em></h2>
+        </div>
+        <p>Real results, from all around the internet.</p>
+      </div>
+      <div class="tabs" aria-label="Search type">
+        <button type="button" class="tab active" data-type="web" aria-pressed="true">✦ &nbsp;All results</button>
+        <button type="button" class="tab" data-type="images" aria-pressed="false">▧ &nbsp;Images</button>
+      </div>
+      <div class="results-layout">
+        <div>
+          <p id="message" class="message" role="status" aria-live="polite"></p>
+          <div id="results" class="results"></div>
+        </div>
+        <aside id="related" class="related" hidden>
+          <div class="related-icon">✳</div>
+          <h3>Keep exploring</h3>
+          <p>A few more paths for your curiosity.</p>
+          <div id="related-list"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="welcome" id="welcome">
+      <div class="welcome-icon">✳</div>
+      <div><h2>A world of good things awaits.</h2><p>Search for something you love, or let curiosity lead the way.</p></div>
+      <span class="welcome-sparkle">✧</span>
+    </section>
+  </main>
+  <footer><span>Made for curious minds <span class="heart">♥</span></span><span>Search powered by Brave</span></footer>
+</body>
+</html>
