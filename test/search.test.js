@@ -51,7 +51,7 @@ test('returns web results and search suggestions without an API key', async () =
   }
 });
 
-test('returns image links and handles provider failures', async () => {
+test('returns image links and handles search failures', async () => {
   const previousFetch = global.fetch;
   try {
     global.fetch = async url => {

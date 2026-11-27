@@ -53,7 +53,7 @@ async function searchWeb(query) {
     })
   ]);
   if (searchResult.status === 'rejected' || !searchResult.value.ok) {
-    throw new Error('Search provider error');
+    throw new Error('Search service error');
   }
   const searchResponse = searchResult.value;
   const suggestionsResponse = suggestionsResult.status === 'fulfilled' ? suggestionsResult.value : null;
@@ -85,7 +85,7 @@ async function searchImages(query) {
     headers: { 'User-Agent': 'Bamboo/1.0 (image search)' },
     signal: AbortSignal.timeout(10000)
   });
-  if (!response.ok) throw new Error('Image provider error');
+  if (!response.ok) throw new Error('Image service error');
   const data = await response.json();
   const results = Object.values(data.query?.pages || {}).map(item => {
     const image = item.imageinfo?.[0];
