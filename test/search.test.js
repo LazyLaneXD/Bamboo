@@ -11,85 +11,84 @@ function response() {
   };
 }
 
-test('validates requests and missing configuration', async () => {
-  const previous = process.env.BRAVE_SEARCH_API_KEY;
-  delete process.env.BRAVE_SEARCH_API_KEY;
-  try {
-    let res = response();
-    await search({ method: 'POST', query: {} }, res);
-    assert.equal(res.statusCode, 405);
-    assert.equal(res.headers.Allow, 'GET');
-    res = response();
-    await search({ method: 'GET', query: { q: ' ' } }, res);
-    assert.equal(res.statusCode, 400);
-    res = response();
-    await search({ method: 'GET', query: { q: 'a'.repeat(201) } }, res);
-    assert.equal(res.statusCode, 400);
-    res = response();
-    await search({ method: 'GET', query: { q: 'pandas', type: 'other' } }, res);
-    assert.equal(res.statusCode, 400);
-    res = response();
-    await search({ method: 'GET', query: { q: 'pandas' } }, res);
-    assert.equal(res.statusCode, 503);
-  } finally {
-    if (previous === undefined) delete process.env.BRAVE_SEARCH_API_KEY;
-    else process.env.BRAVE_SEARCH_API_KEY = previous;
-  }
+test('validates requests', async () => {
+  let res = response();
+  await search({ method: 'POST', query: {} }, res);
+  assert.equal(res.statusCode, 405);
+  assert.equal(res.headers.Allow, 'GET');
+  res = response();
+  await search({ method: 'GET', query: { q: ' ' } }, res);
+  assert.equal(res.statusCode, 400);
+  res = response();
+  await search({ method: 'GET', query: { q: 'a'.repeat(201) } }, res);
+  assert.equal(res.statusCode, 400);
+  res = response();
+  await search({ method: 'GET', query: { q: 'pandas', type: 'other' } }, res);
+  assert.equal(res.statusCode, 400);
 });
 
-test('returns attributed web results and provider recommendations', async () => {
-  const previousKey = process.env.BRAVE_SEARCH_API_KEY;
+test('returns web results and search suggestions without an API key', async () => {
   const previousFetch = global.fetch;
-  process.env.BRAVE_SEARCH_API_KEY = 'test-key';
   global.fetch = async (url, options) => {
-    assert.equal(url.pathname, '/res/v1/web/search');
-    assert.equal(url.searchParams.get('q'), 'pandas');
-    assert.equal(options.headers['X-Subscription-Token'], 'test-key');
-    return { ok: true, json: async () => ({
-      web: { results: [
-        { title: 'Pandas', url: 'https://example.com/pandas', description: 'A source.' },
-        { title: 'Unsafe', url: 'javascript:alert(1)' }
-      ] },
-      related_queries: { results: [{ query: 'giant pandas' }] }
-    }) };
+    assert.match(options.headers['User-Agent'], /^Bamboo/);
+    if (url.hostname === 'www.bing.com') {
+      assert.equal(url.searchParams.get('q'), 'pandas');
+      return { ok: true, text: async () => `<rss><channel><item>
+        <title>Pandas &amp; bamboo</title><link>https://example.com/pandas</link>
+        <description>A <b>source</b>.</description>
+      </item><item><title>Unsafe</title><link>javascript:alert(1)</link><description>Bad</description></item></channel></rss>` };
+    }
+    return { ok: true, json: async () => ['pandas', ['giant pandas', '', 'a'.repeat(201)]] };
   };
   try {
     const res = response();
     await search({ method: 'GET', query: { q: ' pandas ' } }, res);
     assert.equal(res.statusCode, 200);
-    assert.deepEqual(res.body.results, [{ title: 'Pandas', url: 'https://example.com/pandas', description: 'A source.' }]);
+    assert.deepEqual(res.body.results, [{ title: 'Pandas & bamboo', url: 'https://example.com/pandas', description: 'A source.' }]);
     assert.deepEqual(res.body.related, ['giant pandas']);
   } finally {
     global.fetch = previousFetch;
-    if (previousKey === undefined) delete process.env.BRAVE_SEARCH_API_KEY;
-    else process.env.BRAVE_SEARCH_API_KEY = previousKey;
   }
 });
 
 test('returns image links and handles provider failures', async () => {
-  const previousKey = process.env.BRAVE_SEARCH_API_KEY;
   const previousFetch = global.fetch;
-  process.env.BRAVE_SEARCH_API_KEY = 'test-key';
   try {
     global.fetch = async url => {
-      assert.equal(url.pathname, '/res/v1/images/search');
-      return { ok: true, json: async () => ({ results: [
-        { title: 'Panda', url: 'https://example.com/page', thumbnail: { src: 'https://example.com/image.jpg' } },
-        { title: 'Unsafe', url: 'https://example.com', thumbnail: { src: 'javascript:alert(1)' } }
-      ] }) };
+      assert.equal(url.hostname, 'commons.wikimedia.org');
+      return { ok: true, json: async () => ({ query: { pages: {
+        one: { title: 'File:Giant_panda.jpg', imageinfo: [{ descriptionurl: 'https://example.com/page', thumburl: 'https://example.com/image.jpg' }] },
+        two: { title: 'File:Unsafe.jpg', imageinfo: [{ descriptionurl: 'https://example.com', thumburl: 'javascript:alert(1)' }] }
+      } } }) };
     };
     let res = response();
     await search({ method: 'GET', query: { q: 'pandas', type: 'images' } }, res);
     assert.equal(res.statusCode, 200);
-    assert.deepEqual(res.body.results, [{ title: 'Panda', url: 'https://example.com/page', thumbnail: 'https://example.com/image.jpg' }]);
+    assert.deepEqual(res.body.results, [{ title: 'Giant panda', url: 'https://example.com/page', thumbnail: 'https://example.com/image.jpg' }]);
     global.fetch = async () => ({ ok: false });
     res = response();
     await search({ method: 'GET', query: { q: 'pandas' } }, res);
     assert.equal(res.statusCode, 502);
-    assert.doesNotMatch(JSON.stringify(res.body), /test-key/);
   } finally {
     global.fetch = previousFetch;
-    if (previousKey === undefined) delete process.env.BRAVE_SEARCH_API_KEY;
-    else process.env.BRAVE_SEARCH_API_KEY = previousKey;
+  }
+});
+
+test('keeps web results when related suggestions are unavailable', async () => {
+  const previousFetch = global.fetch;
+  global.fetch = async url => {
+    if (url.hostname === 'www.bing.com') {
+      return { ok: true, text: async () => '<rss><item><title>Pandas</title><link>https://example.com/pandas</link><description>A source.</description></item></rss>' };
+    }
+    throw new Error('Suggestions unavailable');
+  };
+  try {
+    const res = response();
+    await search({ method: 'GET', query: { q: 'pandas' } }, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.results.length, 1);
+    assert.deepEqual(res.body.related, []);
+  } finally {
+    global.fetch = previousFetch;
   }
 });
